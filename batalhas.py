@@ -1,3 +1,4 @@
+import math
 import random
 
 from config import dificuldade_ginasios, pokemons
@@ -122,3 +123,90 @@ def hill_climbing(iteracoes=20000):
             custo_atual = custo_vizinho
 
     return atual, custo_atual, energia_final(atual)
+
+def simulated_annealing(temp_inicial=10, taxa_resfriamento=0.999, iteracoes=20000):
+    atual = gerar_solucao_inicial()
+    custo_atual = custo_solucao(atual)
+
+    melhor = atual
+    custo_melhor = custo_atual
+    temperatura = temp_inicial
+
+    for i in range(iteracoes):
+        vizinho = gerar_vizinho(atual)
+        custo_vizinho = custo_solucao(vizinho)
+        diferenca = custo_vizinho - custo_atual
+
+        # melhora sempre aceita, piora aceita com chance que diminui com a temperatura
+        if diferenca <= 0 or random.random() < math.exp(-diferenca / temperatura):
+            atual = vizinho
+            custo_atual = custo_vizinho
+
+            if custo_atual < custo_melhor:
+                melhor = atual
+                custo_melhor = custo_atual
+
+        temperatura = temperatura * taxa_resfriamento
+
+    return melhor, custo_melhor, energia_final(melhor)
+
+def torneio(populacao, custos, tamanho=3):
+    sorteados = random.sample(range(len(populacao)), tamanho)
+
+    vencedor = sorteados[0]
+    for i in sorteados:
+        if custos[i] < custos[vencedor]:
+            vencedor = i
+
+    return populacao[vencedor]
+
+def cruzamento(pai1, pai2):
+    filho = {}
+    for ginasio in pai1:
+        # cada ginásio vem inteiro de um dos pais
+        if random.random() < 0.5:
+            filho[ginasio] = list(pai1[ginasio])
+        else:
+            filho[ginasio] = list(pai2[ginasio])
+    return filho
+
+def algoritmo_genetico(tamanho_populacao=100, geracoes=600, taxa_mutacao=0.9):
+    populacao = []
+    for i in range(tamanho_populacao):
+        populacao.append(gerar_solucao_inicial())
+
+    for geracao in range(geracoes):
+        custos = []
+        for individuo in populacao:
+            custos.append(custo_solucao(individuo))
+
+        ranking = []
+        for i in range(len(populacao)):
+            ranking.append((custos[i], i))
+        ranking.sort()
+
+        # elitismo: os 2 melhores passam direto
+        nova_populacao = [populacao[ranking[0][1]], populacao[ranking[1][1]]]
+
+        while len(nova_populacao) < tamanho_populacao:
+            pai1 = torneio(populacao, custos)
+            pai2 = torneio(populacao, custos)
+            filho = cruzamento(pai1, pai2)
+
+            if random.random() < taxa_mutacao:
+                filho = gerar_vizinho(filho)
+
+            nova_populacao.append(filho)
+
+        populacao = nova_populacao
+
+    # a última geração ainda não foi avaliada
+    melhor = populacao[0]
+    custo_melhor = custo_solucao(melhor)
+    for individuo in populacao:
+        custo = custo_solucao(individuo)
+        if custo < custo_melhor:
+            melhor = individuo
+            custo_melhor = custo
+
+    return melhor, custo_melhor, energia_final(melhor)
