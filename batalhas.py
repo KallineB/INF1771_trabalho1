@@ -107,3 +107,18 @@ def gerar_vizinho(solucao):
             outra_equipe.append(p)
 
     return vizinho
+
+def hill_climbing(iteracoes=20000):
+    atual = gerar_solucao_inicial()
+    custo_atual = custo_solucao(atual)
+
+    for i in range(iteracoes):
+        vizinho = gerar_vizinho(atual)
+        custo_vizinho = custo_solucao(vizinho)
+
+        # so aceita se melhorar
+        if custo_vizinho < custo_atual:
+            atual = vizinho
+            custo_atual = custo_vizinho
+
+    return atual, custo_atual, energia_final(atual)
