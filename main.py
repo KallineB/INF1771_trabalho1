@@ -1,31 +1,9 @@
-import random
-import statistics
 from interface import iniciar_app
 from mapa import carregar_mapa, achar_pontos
-from config import dificuldade_ginasios
 from busca import tabela_distancias
 from rotas import melhor_ordem, rota_completa
-from batalhas import hill_climbing, simulated_annealing, algoritmo_genetico, solucao_valida
-
-def executar_experimentos(algoritmo, execucoes=30, **kwargs):
-    resultados = []
-    melhor_solucao = None
-    melhor_custo = float('inf')
-
-    for semente in range(execucoes):
-        random.seed(semente)
-        solucao, custo, energia = algoritmo(**kwargs)
-        if not solucao_valida(solucao):
-            continue
-        resultados.append(custo)
-        if custo < melhor_custo:
-            melhor_custo = custo
-            melhor_solucao = solucao
-
-    if not resultados:
-        return None, float('inf')
-
-    return melhor_solucao, melhor_custo
+from batalhas import hill_climbing, simulated_annealing, algoritmo_genetico, energia_final
+from experimentos import otimo_programacao_dinamica, rodar_bateria
 
 def executar_ia(mapa):
     pontos = achar_pontos(mapa)
@@ -44,27 +22,27 @@ def executar_ia(mapa):
 
     # 2. Otimização de Batalhas
     print("\nExecutando algoritmos de batalha...")
-    solucao_hc, custo_hc = executar_experimentos(hill_climbing)
-    solucao_sa, custo_sa = executar_experimentos(simulated_annealing)
-    solucao_ag, custo_ag = executar_experimentos(algoritmo_genetico)
+    otimo = otimo_programacao_dinamica()
+    solucao_hc, custo_hc, _, _ = rodar_bateria("Hill Climbing", hill_climbing, otimo)
+    solucao_sa, custo_sa, _, _ = rodar_bateria("Simulated Annealing", simulated_annealing, otimo)
+    solucao_ag, custo_ag, _, _ = rodar_bateria("Algoritmo Genético", algoritmo_genetico, otimo)
 
     # Escolher o melhor algoritmo de batalha
     nome_algoritmo = "Hill Climbing"
     equipes = solucao_hc
     custo_batalhas = custo_hc
 
-    if custo_sa < custo_batalhas:
+    if custo_sa < custo_batalhas - 1e-6:
         nome_algoritmo = "Simulated Annealing"
         equipes = solucao_sa
         custo_batalhas = custo_sa
 
-    if custo_ag < custo_batalhas:
+    if custo_ag < custo_batalhas - 1e-6:
         nome_algoritmo = "Algoritmo Genético"
         equipes = solucao_ag
         custo_batalhas = custo_ag
 
     # Calcular a energia final da equipa escolhida
-    from batalhas import energia_final
     energia = energia_final(equipes)
 
     return {

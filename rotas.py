@@ -1,5 +1,7 @@
 import heapq
 
+from busca import custo_casa
+
 QTD_GINASIOS_CHAVE = 16
 
 def esta_no_conjunto(conjunto, i):
@@ -95,12 +97,13 @@ def melhor_ordem(ginasios, custos):
     for g in chave:
         posicoes_chave.append(ginasios.index(g))
 
+    custo_origem = custo_casa('1')
     inicio = ('1', 0)
-    melhor_g = {inicio: 0}
+    melhor_g = {inicio: custo_origem}
     anteriores = {inicio: None}
     h_inicio = calcular_heuristica('1', 0, chave, posicoes_chave, tabela, custos)
     
-    fronteira = [(h_inicio, 0, '1', 0)]
+    fronteira = [(custo_origem + h_inicio, custo_origem, '1', 0)]
     expandidos = 0
 
     while fronteira:
