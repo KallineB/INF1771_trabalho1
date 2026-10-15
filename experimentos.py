@@ -101,12 +101,12 @@ def rodar_bateria(nome, algoritmo, otimo, **parametros):
 
     print(nome)
     print("  Melhor custo:        %.6f" % melhor_custo)
-    print("  Média:               %.6f" % media)
-    print("  Desvio-padrão:       %.6f" % desvio)
-    print("  Execuções válidas:   %d de %d" % (validas, EXECUCOES))
-    print("  Atingiu o ótimo:     %d de %d" % (acertos, EXECUCOES))
+    print("  Media:               %.6f" % media)
+    print("  Desvio-padrao:       %.6f" % desvio)
+    print("  Execuções validas:   %d de %d" % (validas, EXECUCOES))
+    print("  Atingiu o otimo:     %d de %d" % (acertos, EXECUCOES))
     print("  Tempo total:         %.6f s" % tempo)
-    print("  Tempo por execução:  %.6f s" % (tempo / EXECUCOES))
+    print("  Tempo por execucao:  %.6f s" % (tempo / EXECUCOES))
     print()
 
     return melhor_solucao, melhor_custo, acertos, media
@@ -136,8 +136,8 @@ def escolher_parametros_sa(otimo):
 def executar_experimentos():
     inicio = time.time()
     otimo = otimo_programacao_dinamica()
-    print("Ótimo global (programação dinâmica): %.6f" % otimo)
-    print("Tempo da programação dinâmica: %.6f s" % (time.time() - inicio))
+    print("Otimo global (programação dinamica): %.6f" % otimo)
+    print("Tempo da programacao dinamica: %.6f s" % (time.time() - inicio))
     print()
 
     print("Teste de parâmetros do Simulated Annealing")
@@ -151,7 +151,7 @@ def executar_experimentos():
     rodar_bateria("Hill Climbing", hill_climbing, otimo)
     rodar_bateria("Simulated Annealing", simulated_annealing, otimo,
                   temp_inicial=temp_inicial, taxa_resfriamento=taxa)
-    rodar_bateria("Algoritmo Genético", algoritmo_genetico, otimo)
+    rodar_bateria("Algoritmo Genetico", algoritmo_genetico, otimo)
 
 if __name__ == "__main__":
     executar_experimentos()

@@ -10,10 +10,10 @@ def executar_ia(mapa):
     ginasios = [g for g in pontos if g not in ['1', 'U']]
 
     # 1. Rotas no Mapa (A*)
-    print("\nCalculando distâncias no mapa com A* ")
+    print("\nCalculando distancias no mapa com A* ")
     custos, caminhos, visitados_mapa, fronteiras_mapa = tabela_distancias(mapa, pontos)
 
-    print("Calculando a melhor ordem dos ginásios (TSP) ")
+    print("Calculando a melhor ordem dos ginasios (TSP) ")
     ordem, custo_rota, expandidos = melhor_ordem(ginasios, custos)
 
     rota, visitados_total, fronteira_total = rota_completa(
@@ -38,7 +38,7 @@ def executar_ia(mapa):
         custo_batalhas = custo_sa
 
     if custo_ag < custo_batalhas - 1e-6:
-        nome_algoritmo = "Algoritmo Genético"
+        nome_algoritmo = "Algoritmo Genetico"
         equipes = solucao_ag
         custo_batalhas = custo_ag
 
