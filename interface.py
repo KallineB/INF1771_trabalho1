@@ -1,5 +1,8 @@
 import pygame
 import sys
+import threading
+
+from config import dificuldade_ginasios
 
 CORES = {
     'M': (139, 69, 19),
@@ -27,7 +30,7 @@ def iniciar_app(mapa, funcao_ia, fps=60, tamanho_celula=8):
     
     largura_mapa = colunas * tamanho_celula
     altura_mapa = linhas * tamanho_celula
-    altura_painel = 200 
+    altura_painel = 240
     
     tela = pygame.display.set_mode((largura_mapa, altura_mapa + altura_painel))
     pygame.display.set_caption("Busca Heurística - Pokémon Kanto")
@@ -35,13 +38,20 @@ def iniciar_app(mapa, funcao_ia, fps=60, tamanho_celula=8):
     
     fonte = pygame.font.SysFont("Arial", 16)
     fonte_titulo = pygame.font.SysFont("Arial", 20, bold=True)
+    fonte_lista = pygame.font.SysFont("Arial", 13)
     
     estado = "AGUARDANDO" 
     dados_ia = None
     passo_atual = 0
     
     painel_y = altura_mapa
-    botao_rect = pygame.Rect(largura_mapa - 240, painel_y + 30, 220, 50)
+    botao_rect = pygame.Rect(400, painel_y + 180, 220, 50)
+
+    # o cálculo roda numa thread separada para a janela não travar
+    calculo = {"dados": None}
+
+    def calcular():
+        calculo["dados"] = funcao_ia(mapa)
     
     rodando = True
     while rodando:
@@ -53,6 +63,8 @@ def iniciar_app(mapa, funcao_ia, fps=60, tamanho_celula=8):
                 if botao_rect.collidepoint(evento.pos):
                     if estado == "AGUARDANDO":
                         estado = "CALCULANDO"
+                        calculo["dados"] = None
+                        threading.Thread(target=calcular, daemon=True).start()
                     elif estado == "ANIMANDO":
                         estado = "PAUSADO"
                     elif estado == "PAUSADO":
@@ -69,7 +81,7 @@ def iniciar_app(mapa, funcao_ia, fps=60, tamanho_celula=8):
             for j in range(colunas):
                 cor = obter_cor(mapa[i][j])
                 
-                if dados_ia and mapa[i][j] not in ['1', 'U', 'M', 'A', 'F'] and mapa[i][j] not in "23456789BCDEGHIJKLNOPQST":
+                if dados_ia and mapa[i][j] not in ['1', 'U'] and mapa[i][j] not in dificuldade_ginasios:
                     if (i, j) in dados_ia["visitados"]:
                         cor = CORES['VISITADO']
                     elif (i, j) in dados_ia["fronteira"]:
@@ -115,10 +127,12 @@ def iniciar_app(mapa, funcao_ia, fps=60, tamanho_celula=8):
             # mover e desenhar Agente
             if passo_atual < len(dados_ia["rota"]):
                 linha_ag, coluna_ag = dados_ia["rota"][passo_atual]
+                passo = passo_atual  # posição em que o agente está desenhado
                 if estado == "ANIMANDO":
                     passo_atual += 1
             else:
                 linha_ag, coluna_ag = dados_ia["rota"][-1]
+                passo = len(dados_ia["rota"]) - 1
                 estado = "FINALIZADO"
                 texto_botao = "VOLTAR AO INÍCIO"
                 cor_botao = (30, 144, 255) # Azul
@@ -127,14 +141,17 @@ def iniciar_app(mapa, funcao_ia, fps=60, tamanho_celula=8):
             y_ag = linha_ag * tamanho_celula + tamanho_celula // 2
             pygame.draw.circle(tela, CORES['AGENTE'], (x_ag, y_ag), max(2, tamanho_celula // 2))
             
-            # mostra resultados
+            # mostra resultados (custos acumulados até a posição atual do agente)
+            custo_rota_ate_agora = dados_ia["custo_rota_passo"][passo]
+            custo_batalhas_ate_agora = dados_ia["custo_batalha_passo"][passo]
+
             y_offset = painel_y + 15
             linhas_texto_col1 = [
                 ("RESULTADOS FINAIS", (0, 255, 0), fonte_titulo),
                 (f"Melhor Algoritmo: {dados_ia['melhor_algoritmo']}", (200, 255, 255), fonte),
-                (f"Custo Total: {round(dados_ia['custo_total'], 3)} min", (255, 255, 255), fonte),
-                (f"Custo Rotas: {dados_ia['custo_rota']} min", (255, 255, 255), fonte),
-                (f"Custo Batalhas: {round(dados_ia['custo_batalhas'], 3)} min", (255, 255, 255), fonte),
+                (f"Custo Total: {round(custo_rota_ate_agora + custo_batalhas_ate_agora, 3)} min", (255, 255, 255), fonte),
+                (f"Custo Rotas: {custo_rota_ate_agora} min", (255, 255, 255), fonte),
+                (f"Custo Batalhas: {round(custo_batalhas_ate_agora, 3)} min", (255, 255, 255), fonte),
                 (f"Nós Expandidos (A*): {dados_ia['expandidos']}", (255, 255, 0), fonte_titulo),
                 (f"Passos no mapa: {len(dados_ia['rota']) - 1}", (255, 255, 255), fonte)
             ]
@@ -153,6 +170,22 @@ def iniciar_app(mapa, funcao_ia, fps=60, tamanho_celula=8):
                 tela.blit(texto_energia, (400, y_offset2))
                 y_offset2 += 25
 
+            # ordem de visita e pokémons de cada batalha (verde = batalha já feita)
+            tela.blit(fonte_titulo.render("Ordem de Visita e Equipes:", True, (200, 200, 200)), (700, painel_y + 15))
+            ordem = dados_ia["ordem"]
+            por_coluna = (len(ordem) + 1) // 2
+            for k in range(len(ordem)):
+                ginasio = ordem[k]
+                equipe = dados_ia["equipes"][ginasio]
+                tempo = dados_ia["tempo_batalha"][ginasio]
+                cor = (255, 255, 255)
+                if dados_ia["passo_da_batalha"][ginasio] <= passo:
+                    cor = (0, 255, 0)
+                texto = f"{k + 1:02d}. {ginasio} - {', '.join(equipe)} ({tempo:.2f})"
+                x = 700 + (k // por_coluna) * 260
+                y = painel_y + 45 + (k % por_coluna) * 15
+                tela.blit(fonte_lista.render(texto, True, cor), (x, y))
+
         
         pygame.draw.rect(tela, cor_botao, botao_rect, border_radius=5)
         superficie_texto = fonte_titulo.render(texto_botao, True, (255, 255, 255))
@@ -162,8 +195,8 @@ def iniciar_app(mapa, funcao_ia, fps=60, tamanho_celula=8):
         pygame.display.flip()
         
         
-        if estado == "CALCULANDO" and dados_ia is None:
-            dados_ia = funcao_ia(mapa)
+        if estado == "CALCULANDO" and calculo["dados"] is not None:
+            dados_ia = calculo["dados"]
             estado = "ANIMANDO"
 
         relogio.tick(fps)
