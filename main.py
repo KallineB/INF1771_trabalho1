@@ -21,34 +21,25 @@ def executar_ia(mapa):
     )
 
     # 2. Otimização de Batalhas
-    print("\nExecutando algoritmos de batalha ")
+    print("\nExecutando algoritmos de batalha...")
     otimo = otimo_programacao_dinamica()
-    solucao_hc, custo_hc, _, _ = rodar_bateria("Hill Climbing", hill_climbing, otimo)
-    solucao_sa, custo_sa, _, _ = rodar_bateria("Simulated Annealing", simulated_annealing, otimo)
-    solucao_ag, custo_ag, _, _ = rodar_bateria("Algoritmo Genético", algoritmo_genetico, otimo)
 
-    # Escolher o melhor algoritmo de batalha
-    nome_algoritmo = "Hill Climbing"
-    equipes = solucao_hc
-    custo_batalhas = custo_hc
+    sol_hc, custo_hc, acertos_hc, media_hc, desvio_hc, tempo_hc = rodar_bateria("Hill Climbing", hill_climbing, otimo)
+    sol_sa, custo_sa, acertos_sa, media_sa, desvio_sa, tempo_sa = rodar_bateria("Simulated Annealing", simulated_annealing, otimo)
+    sol_ag, custo_ag, acertos_ag, media_ag, desvio_ag, tempo_ag = rodar_bateria("Algoritmo Genético", algoritmo_genetico, otimo)
 
-    if custo_sa < custo_batalhas - 1e-6:
-        nome_algoritmo = "Simulated Annealing"
-        equipes = solucao_sa
-        custo_batalhas = custo_sa
+    candidatos = [
+        {"nome": "Hill Climbing", "solucao": sol_hc, "custo": custo_hc, "acertos": acertos_hc, "media": media_hc, "desvio": desvio_hc, "tempo": tempo_hc},
+        {"nome": "Simulated Annealing", "solucao": sol_sa, "custo": custo_sa, "acertos": acertos_sa, "media": media_sa, "desvio": desvio_sa, "tempo": tempo_sa},
+        {"nome": "Algoritmo Genético", "solucao": sol_ag, "custo": custo_ag, "acertos": acertos_ag, "media": media_ag, "desvio": desvio_ag, "tempo": tempo_ag},
+    ]
 
-    if custo_ag < custo_batalhas - 1e-6:
-        nome_algoritmo = "Algoritmo Genetico"
-        equipes = solucao_ag
-        custo_batalhas = custo_ag
+    candidatos.sort(key=criterios_de_desempate)
 
-    # se mais de um algoritmo chegou no mesmo custo, mostra o empate
-    empatados = []
-    for sigla, custo in [("HC", custo_hc), ("SA", custo_sa), ("AG", custo_ag)]:
-        if abs(custo - custo_batalhas) < 1e-6:
-            empatados.append(sigla)
-    if len(empatados) > 1:
-        nome_algoritmo = "Empate (" + ", ".join(empatados) + ")"
+    melhor = candidatos[0]
+    nome_algoritmo = melhor["nome"]
+    equipes = melhor["solucao"]
+    custo_batalhas = melhor["custo"]
 
     # Calcular a energia final da equipa escolhida
     energia = energia_final(equipes)
@@ -90,6 +81,15 @@ def executar_ia(mapa):
         "passo_da_batalha": passo_da_batalha,
         "tempo_batalha": tempos
     }
+
+def criterios_de_desempate(candidato):
+        return (
+            round(candidato["custo"], 4),
+            -candidato["acertos"], # negativo inverte a ordem
+            round(candidato["media"], 4),
+            round(candidato["desvio"], 4),
+            candidato["tempo"]
+        )
 
 def main():
     mapa = carregar_mapa("mapa.txt")

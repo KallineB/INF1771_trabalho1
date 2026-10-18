@@ -109,7 +109,7 @@ def rodar_bateria(nome, algoritmo, otimo, **parametros):
     print("  Tempo por execucao:  %.6f s" % (tempo / EXECUCOES))
     print()
 
-    return melhor_solucao, melhor_custo, acertos, media
+    return melhor_solucao, melhor_custo, acertos, media, desvio, tempo
 
 def escolher_parametros_sa(otimo):
     melhor_temp = None
@@ -120,10 +120,9 @@ def escolher_parametros_sa(otimo):
     for temp_inicial in (1, 10, 100):
         for taxa in (0.999, 0.9995, 0.9998):
             nome = "SA com temperatura inicial %.6f e taxa %.6f" % (temp_inicial, taxa)
-            solucao, custo, acertos, media = rodar_bateria(nome, simulated_annealing, otimo,
+            solucao, custo, acertos, media, desvio, tempo = rodar_bateria(nome, simulated_annealing, otimo,
                                                            temp_inicial=temp_inicial,
                                                            taxa_resfriamento=taxa)
-
             # vale quem acerta o ótimo mais vezes, no empate quem tem a menor média
             if acertos > melhor_acertos or (acertos == melhor_acertos and media < melhor_media):
                 melhor_temp = temp_inicial
