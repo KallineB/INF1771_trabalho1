@@ -9,7 +9,7 @@ def executar_ia(mapa):
     pontos = achar_pontos(mapa)
     ginasios = [g for g in pontos if g not in ['1', 'U']]
 
-    # 1. Rotas no Mapa (A*)
+    # rotas
     print("\nCalculando distancias no mapa com A* ")
     custos, caminhos, visitados_mapa, fronteiras_mapa = tabela_distancias(mapa, pontos)
 
@@ -20,7 +20,6 @@ def executar_ia(mapa):
         ordem, caminhos, visitados_mapa, fronteiras_mapa
     )
 
-    # 2. Otimização de Batalhas
     print("\nExecutando algoritmos de batalha...")
     otimo = otimo_programacao_dinamica()
 
@@ -41,7 +40,7 @@ def executar_ia(mapa):
     equipes = melhor["solucao"]
     custo_batalhas = melhor["custo"]
 
-    # Calcular a energia final da equipa escolhida
+    # calcular a energia final da equipa escolhida
     energia = energia_final(equipes)
 
     # custos acumulados em cada passo da rota, para mostrar enquanto o agente anda
